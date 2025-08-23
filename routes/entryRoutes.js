@@ -54,30 +54,28 @@ router.post("/", authMiddleware, upload.array("files"), async (req, res) => {
   }
 });
 
-// Remove media
-router.delete("/:id/media", authMiddleware, async (req, res) => {
+// DELETE media from an entry
+router.delete("/:entryId/media/:mediaId", authMiddleware, async (req, res) => {
   try {
-    const { url } = req.body;
-    if (!url) return res.status(400).json({ msg: "url required" });
+    const { entryId, mediaId } = req.params;
 
-    const entry = await Entry.findOne({ _id: req.params.id, user: req.user._id });
-    if (!entry) return res.status(404).json({ msg: "Entry not found" });
+    const entry = await Entry.findById(entryId);
+    if (!entry) {
+      return res.status(404).json({ message: "Entry not found" });
+    }
 
-    const before = entry.media.length;
-    entry.media = entry.media.filter((m) => m.url !== url);
-
-    // delete file physically
-    try {
-      const abs = path.join(__dirname, "..", url);
-      if (fs.existsSync(abs)) fs.unlinkSync(abs);
-    } catch {}
+    // remove media by _id
+    entry.media = entry.media.filter(m => m._id.toString() !== mediaId);
 
     await entry.save();
-    res.json({ msg: before !== entry.media.length ? "Removed" : "Not found", media: entry.media });
+
+    res.json({ message: "Media deleted successfully", entry });
   } catch (err) {
-    res.status(500).json({ msg: "Server error", error: err.message });
+    console.error("Error deleting media:", err);
+    res.status(500).json({ message: "Server error while deleting media" });
   }
 });
+
 
 // Update entry
 router.put("/:id", authMiddleware, async (req, res) => {
