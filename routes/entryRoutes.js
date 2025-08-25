@@ -161,26 +161,26 @@ router.put("/archive/:id/restore", authMiddleware, async (req, res) => {
   }
 });
 
-// Upload additional media to an entry
-router.post("/:id/upload", authMiddleware, upload.array("files"), async (req, res) => {
+// Upload additional media for an entry
+router.post("/:id/media", upload.array("media"), async (req, res) => {
   try {
-    const entry = await Entry.findOne({ _id: req.params.id, user: req.user._id });
-    if (!entry) return res.status(404).json({ msg: "Entry not found" });
+    const entry = await Entry.findById(req.params.id);
+    if (!entry) return res.status(404).json({ message: "Entry not found" });
 
-    const newMedia = (req.files || []).map(f => ({
-      url: `/uploads/${f.filename}`,
-      type: getFileType(f.originalname),
+    const newMedia = req.files.map(file => ({
+      url: `/uploads/${file.filename}`, // adjust if using Cloudinary/S3
+      type: file.mimetype.startsWith("video") ? "video" : "image",
     }));
 
     entry.media.push(...newMedia);
     await entry.save();
 
-    res.json({ msg: "Media uploaded", media: entry.media });
+    res.json(newMedia); // ✅ return only the new media
   } catch (err) {
-    res.status(500).json({ msg: "Server error", error: err.message });
+    console.error(err);
+    res.status(500).json({ message: "Upload failed" });
   }
 });
-
 
 // Delete permanently
 router.delete("/archive/:id", authMiddleware, async (req, res) => {
