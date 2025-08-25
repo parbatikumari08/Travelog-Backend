@@ -21,10 +21,14 @@ app.use(cookieParser());
 // ✅ Enable CORS with credentials
 app.use(
   cors({
-    origin: "http://localhost:5173", // frontend URL
+    origin: [
+      "http://localhost:5173",         // local dev
+      "https://letstravelog.netlify.app", // deployed frontend
+    ],
     credentials: true,
   })
 );
+
 
 // ✅ Serve uploads folder (profile pics, entries, etc.)
 app.use("/uploads", express.static(path.join(__dirname, "uploads")));
