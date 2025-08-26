@@ -1,25 +1,37 @@
 const multer = require("multer");
-const path = require("path");
+const { CloudinaryStorage } = require("multer-storage-cloudinary");
+const cloudinary = require("cloudinary").v2;
 
-// __define-ocg__ Multer storage configuration
-const storage = multer.diskStorage({
-  destination: (req, file, cb) => {
-    cb(null, "uploads/"); // saves files inside backend/uploads folder
-  },
-  filename: (req, file, cb) => {
-    const uniqueName =
-      Date.now() +
-      "-" +
-      Math.round(Math.random() * 1e9) +
-      path.extname(file.originalname);
-    cb(null, uniqueName);
+// __define-ocg__ Cloudinary configuration
+cloudinary.config({
+  cloud_name: process.env.CLOUDINARY_CLOUD_NAME,
+  api_key: process.env.CLOUDINARY_API_KEY,
+  api_secret: process.env.CLOUDINARY_API_SECRET,
+});
+
+// Multer storage to Cloudinary
+const storage = new CloudinaryStorage({
+  cloudinary,
+  params: async (req, file) => {
+    let folder = "travelog_uploads"; // default folder
+    if (file.mimetype.startsWith("image")) {
+      folder = "travelog_images";
+    } else if (file.mimetype.startsWith("video")) {
+      folder = "travelog_videos";
+    }
+
+    return {
+      folder,
+      resource_type: "auto", // ✅ handles both images + videos
+      public_id: Date.now() + "-" + file.originalname.split(".")[0],
+    };
   },
 });
 
-// File filter: allow images and videos only
+// ✅ File filter (images + videos only)
 const fileFilter = (req, file, cb) => {
   const allowedTypes = /jpeg|jpg|png|gif|mp4|mov|avi|mkv/;
-  const ext = path.extname(file.originalname).toLowerCase();
+  const ext = file.originalname.split(".").pop().toLowerCase();
   if (allowedTypes.test(ext)) {
     cb(null, true);
   } else {
@@ -28,13 +40,13 @@ const fileFilter = (req, file, cb) => {
 };
 
 // Variable name requirement
-const varOcg = "multer-config-ok";
+const varOcg = "cloudinary-config-ok";
 
-// ✅ Upload instance with file size limit (50MB)
+// ✅ Multer instance
 const upload = multer({
   storage,
   fileFilter,
   limits: { fileSize: 50 * 1024 * 1024 }, // 50MB
 });
 
-module.exports = { upload, varOcg };
+module.exports = { upload, varOcg, cloudinary };
