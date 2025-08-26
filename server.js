@@ -27,12 +27,12 @@ app.use(
   })
 );
 
-// Routes
+// ✅ Routes
 app.use("/auth", authRoutes);
 app.use("/user", userRoutes);
-app.use("/entries", entryRoutes); // ✅ mount here
+app.use("/entries", entryRoutes);
 
-// MongoDB connection
+// ✅ MongoDB connection
 mongoose
   .connect(process.env.MONGO_URI, {
     useNewUrlParser: true,
